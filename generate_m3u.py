@@ -4,7 +4,7 @@ import re
 API_URL = "https://boti.my.id/index.php?api=playlist&email=mbkidriss9%40gmail.com&password=12345678"
 
 def generate_playlist():
-    print("Mengambil data Series & Movies dari API...")
+    print("Mengambil data Series & Movies dari API (Khusus HLS)...")
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(API_URL, headers=headers, timeout=20)
@@ -29,7 +29,7 @@ def generate_playlist():
             group = m_group.group(1).strip() if m_group else "Uncategorized"
             group_lower = group.lower()
             
-            # Lewati jika ini Live / Upcoming
+            # Lewati jika ini Live / Upcoming (akan diproses oleh generate_live.py)
             if any(x in group_lower for x in ["live", "tv", "nasional", "sport", "upcoming"]):
                 continue
                 
@@ -45,23 +45,10 @@ def generate_playlist():
             # Cek apakah tayangan ini masuk kategori Series
             is_series = any(x in group_lower for x in ["series", "drama", "episode", "season"])
             
-            # --- MERAKIT URL HLS (UNTUK SEMUA KATEGORI) ---
+            # --- MERAKIT URL MURNI HLS UNTUK SEMUA VOD ---
             out_block = extinf_line + "\n"
             if other_tags: out_block += "\n".join(other_tags) + "\n"
             out_block += url_line + "\n\n"
-            
-            # --- MERAKIT URL DASH & DRM (HANYA UNTUK MOVIES, SERIES DIBUANG) ---
-            if not is_series:
-                dash_url = url_line.replace(".m3u8", ".mpd").replace("type=hls", "type=dash")
-                drm_url = url_line.replace("index.m3u8", "index.php").replace("type=hls", "type=drm")
-                
-                out_block += extinf_line + " (DASH)\n"
-                if other_tags: out_block += "\n".join(other_tags) + "\n"
-                out_block += "#KODIPROP:inputstream=inputstream.adaptive\n"
-                out_block += "#KODIPROP:inputstream.adaptive.manifest_type=mpd\n"
-                out_block += "#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha\n"
-                out_block += f"#KODIPROP:inputstream.adaptive.license_key={drm_url}\n"
-                out_block += dash_url + "\n\n"
             
             # --- DISTRIBUSI KE FILE ---
             if is_series:
@@ -81,7 +68,7 @@ def generate_playlist():
         with open("all_series.m3u", "w", encoding="utf-8") as f: f.writelines(all_series)
         with open("series_100.m3u", "w", encoding="utf-8") as f: f.writelines(series_100)
         with open("movies.m3u", "w", encoding="utf-8") as f: f.writelines(movies)
-        print(f"Sukses! All Series (Tanpa DASH): {c_all} | Series 100: {c_s100} | Movies (Dengan DASH): {c_mov}")
+        print(f"Sukses! All Series: {c_all} | Series 100: {c_s100} | Movies: {c_mov}")
             
     except Exception as e:
         print(f"Error: {e}")
