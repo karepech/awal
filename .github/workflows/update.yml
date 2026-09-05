@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '0 */3 * * *'
   workflow_dispatch:
+  push:
+    paths:
+      - '**.py' # INI KUNCINYA: Otomatis berjalan setiap ada perubahan di file Python
 
 jobs:
   update-playlist:
@@ -38,7 +41,7 @@ jobs:
           
           git add *.m3u
           
-          git commit -m "Auto-update 5 playlists $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
+          git commit -m "Auto-update playlists $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
           
           git pull --rebase origin main
           git push
