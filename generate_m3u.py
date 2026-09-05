@@ -10,6 +10,8 @@ def generate_playlist():
         response = requests.get(API_URL, headers=headers, timeout=20)
         # Menghapus karakter enter (\r) agar pemotongan blok sempurna
         content = response.text.replace('\r', '').strip()
+print("HASIL DARI SERVER:", content[:300]) # Mengintip 300 huruf pertama
+
         
         all_series = ["#EXTM3U\n"]
         series_100 = ["#EXTM3U\n"]
