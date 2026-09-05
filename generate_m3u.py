@@ -42,26 +42,29 @@ def generate_playlist():
             url_line = next((l for l in lines if l.startswith("http")), None)
             if not url_line: continue
             
-            # --- MAGIC: MERAKIT DASH & DRM DENGAN STRING REPLACEMENT ---
-            dash_url = url_line.replace(".m3u8", ".mpd").replace("type=hls", "type=dash")
-            drm_url = url_line.replace("index.m3u8", "index.php").replace("type=hls", "type=drm")
+            # Cek apakah tayangan ini masuk kategori Series
+            is_series = any(x in group_lower for x in ["series", "drama", "episode", "season"])
             
-            # Format HLS
+            # --- MERAKIT URL HLS (UNTUK SEMUA KATEGORI) ---
             out_block = extinf_line + "\n"
             if other_tags: out_block += "\n".join(other_tags) + "\n"
-            out_block += url_line + "\n"
+            out_block += url_line + "\n\n"
             
-            # Format DASH
-            out_block += extinf_line + " (DASH)\n"
-            if other_tags: out_block += "\n".join(other_tags) + "\n"
-            out_block += "#KODIPROP:inputstream=inputstream.adaptive\n"
-            out_block += "#KODIPROP:inputstream.adaptive.manifest_type=mpd\n"
-            out_block += "#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha\n"
-            out_block += f"#KODIPROP:inputstream.adaptive.license_key={drm_url}\n"
-            out_block += dash_url + "\n\n"
+            # --- MERAKIT URL DASH & DRM (HANYA UNTUK MOVIES, SERIES DIBUANG) ---
+            if not is_series:
+                dash_url = url_line.replace(".m3u8", ".mpd").replace("type=hls", "type=dash")
+                drm_url = url_line.replace("index.m3u8", "index.php").replace("type=hls", "type=drm")
+                
+                out_block += extinf_line + " (DASH)\n"
+                if other_tags: out_block += "\n".join(other_tags) + "\n"
+                out_block += "#KODIPROP:inputstream=inputstream.adaptive\n"
+                out_block += "#KODIPROP:inputstream.adaptive.manifest_type=mpd\n"
+                out_block += "#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha\n"
+                out_block += f"#KODIPROP:inputstream.adaptive.license_key={drm_url}\n"
+                out_block += dash_url + "\n\n"
             
             # --- DISTRIBUSI KE FILE ---
-            if any(x in group_lower for x in ["series", "drama", "episode", "season"]):
+            if is_series:
                 all_series.append(out_block)
                 c_all += 1
                 if group in seen_series:
@@ -78,7 +81,7 @@ def generate_playlist():
         with open("all_series.m3u", "w", encoding="utf-8") as f: f.writelines(all_series)
         with open("series_100.m3u", "w", encoding="utf-8") as f: f.writelines(series_100)
         with open("movies.m3u", "w", encoding="utf-8") as f: f.writelines(movies)
-        print(f"Sukses! All Series: {c_all} | Series 100: {c_s100} | Movies: {c_mov}")
+        print(f"Sukses! All Series (Tanpa DASH): {c_all} | Series 100: {c_s100} | Movies (Dengan DASH): {c_mov}")
             
     except Exception as e:
         print(f"Error: {e}")
